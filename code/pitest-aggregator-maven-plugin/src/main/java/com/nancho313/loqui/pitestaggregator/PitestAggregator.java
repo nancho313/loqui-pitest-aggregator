@@ -1,10 +1,12 @@
 package com.nancho313.loqui.pitestaggregator;
 
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.pitest.aggregate.ReportAggregationException;
 import org.pitest.aggregate.ReportAggregator;
 import org.pitest.mutationtest.config.DatedDirectoryReportDirCreationStrategy;
@@ -15,18 +17,17 @@ import java.util.List;
 @Mojo(name = "generate", defaultPhase = LifecyclePhase.NONE)
 public class PitestAggregator extends AbstractMojo {
 
-  @Parameter(property = "workingDirectory")
-  private String workingDirectory;
+  @Parameter(defaultValue = "${project}", required = true, readonly = true)
+  private MavenProject project;
 
-  @Parameter(property = "modules")
-  private List<String> modules;
-
-  @Parameter(property = "outputDirectory")
+  @Parameter(property = "outputDirectory", defaultValue = "${basedir}/target")
   private String outputDirectory;
 
   @Override
   public void execute() throws MojoFailureException {
 
+    var modules = project.getDependencies().stream().map(Dependency::getArtifactId).toList();
+    var workingDirectory = project.getParent().getBasedir().getAbsolutePath();
     ReportAggregator.Builder raBuilder = ReportAggregator.builder();
 
     var moduleConfigurations = modules.stream().map(module -> new Module(workingDirectory, module)).toList();
